@@ -1,4 +1,3 @@
-
 name: Fleet Rank Monitor
 
 on:
@@ -19,6 +18,7 @@ jobs:
           import json
           import os
           import urllib.request
+          import urllib.error
 
           API_URL = "https://fleet.swgoh.dev/api/shards/88kr8x8hip"
           ALLY_CODE = 121537521
@@ -27,13 +27,20 @@ jobs:
           if not WEBHOOK:
               raise RuntimeError("DISCORD_WEBHOOK secret is missing.")
 
+          # Step 1: Read fleet rank
           request = urllib.request.Request(
               API_URL,
-              headers={"User-Agent": "FleetRankMonitor/1.0"}
+              headers={"User-Agent": "Mozilla/5.0"}
           )
 
-          with urllib.request.urlopen(request, timeout=30) as response:
-              data = json.loads(response.read().decode("utf-8"))
+          try:
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  data = json.loads(response.read().decode("utf-8"))
+                  print(f"Fleet API response: HTTP {response.status}")
+          except urllib.error.HTTPError as e:
+              print(f"Fleet API error: HTTP {e.code}")
+              print(e.read().decode("utf-8", errors="replace"))
+              raise
 
           player = next(
               (p for p in data["players"]
@@ -45,10 +52,15 @@ jobs:
               raise RuntimeError("Your Ally Code was not found in the shard.")
 
           current_rank = int(player["fleet_rank"])
+          player_name = player.get("name", "Unknown")
 
+          print(f"Player: {player_name}")
+          print(f"Current fleet rank: #{current_rank}")
+
+          # Step 2: Send Discord notification
           message = (
               f"🚀 Fleet Arena Rank Report\n"
-              f"Player: {player['name']}\n"
+              f"Player: {player_name}\n"
               f"Current Rank: #{current_rank}"
           )
 
@@ -61,7 +73,12 @@ jobs:
               method="POST"
           )
 
-          with urllib.request.urlopen(req, timeout=30) as response:
-              print(f"Discord notification sent: HTTP {response.status}")
-              print(f"Current fleet rank: #{current_rank}")
+          try:
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  print(f"Discord response: HTTP {response.status}")
+                  print("Notification sent successfully.")
+          except urllib.error.HTTPError as e:
+              print(f"Discord error: HTTP {e.code}")
+              print(e.read().decode("utf-8", errors="replace"))
+              raise
           PY
