@@ -27,10 +27,13 @@ jobs:
           if not WEBHOOK:
               raise RuntimeError("DISCORD_WEBHOOK secret is missing.")
 
-          # Step 1: Read fleet rank
+          # Read fleet rank
           request = urllib.request.Request(
               API_URL,
-              headers={"User-Agent": "Mozilla/5.0"}
+              headers={
+                  "User-Agent": "Mozilla/5.0",
+                  "Accept": "application/json"
+              }
           )
 
           try:
@@ -57,7 +60,7 @@ jobs:
           print(f"Player: {player_name}")
           print(f"Current fleet rank: #{current_rank}")
 
-          # Step 2: Send Discord notification
+          # Send Discord notification
           message = (
               f"🚀 Fleet Arena Rank Report\n"
               f"Player: {player_name}\n"
@@ -69,7 +72,11 @@ jobs:
           req = urllib.request.Request(
               WEBHOOK,
               data=payload,
-              headers={"Content-Type": "application/json"},
+              headers={
+                  "Content-Type": "application/json",
+                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36",
+                  "Accept": "*/*"
+              },
               method="POST"
           )
 
